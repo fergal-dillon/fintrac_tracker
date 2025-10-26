@@ -1,0 +1,162 @@
+# FINTRAC Tracker
+
+A Python-based scraper that automatically collects FINTRAC news articles and uploads them to a Google Sheet, updating every Monday. Designed for transparency and automation, it preserves dashboard formatting and makes the dataset easy to read.
+
+---
+
+## Features
+- Scrapes FINTRAC “What’s New” articles (date, title, link)
+- Converts raw links to “Read article” hyperlinks
+- Automatically uploads and formats data in a Google Sheet
+- Preserves dashboard layout and logo
+- Scheduled to run every Monday via macOS LaunchAgent
+- Generates logs (`scraper.log` and `scraper_error.log`) for monitoring
+
+## Example Output
+
+Here’s how the Google Sheet looks after the scraper runs:
+
+![FINTRAC Tracker Screenshot](screenshots/fintrac_sheet.png)
+
+---
+
+## Setup Instructions
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/fergal-dillon/fintrac_tracker.git
+
+2. **Place your Google service account JSON**
+- Go to your Google Cloud project → Service Accounts → Keys → Create new key → JSON.  
+- Download the JSON file (e.g., `fintrac-credentials.json`).  
+- Move this file into the `fintrac_tracker` folder on your computer.
+
+3. **Install Python dependencies**
+- Make sure Python 3 is installed.  
+- Install the required packages:
+```bash
+python3 -m pip install selenium gspread oauth2client pandas
+
+### 4. Check ChromeDriver
+
+```text
+# Ensure ChromeDriver is installed and matches your Chrome version
+# On macOS with Homebrew:
+brew install --cask chromedriver
+
+# Confirm installation and path:
+which chromedriver
+# Example output: /opt/homebrew/bin/chromedriver
+
+# Update the path in scraper.py if needed:
+service = Service("/opt/homebrew/bin/chromedriver")
+
+### 5. Install Python Dependencies
+
+```bash
+# Make sure you are using the correct Python version
+python3 -m pip install --upgrade pip
+
+# Install required packages
+python3 -m pip install selenium gspread oauth2client pandas
+
+### 6. Test the Scraper
+
+Run the scraper manually to make sure everything is working:
+
+    cd ~/Desktop/fintrac_tracker
+    python3 scraper.py
+
+- Check that `fintrac_news.csv` is created.
+- Confirm that your Google Sheet `FINTRAC Tracker` is updated with the latest articles.
+- Check `scraper.log` and `scraper_error.log` for any messages.
+
+### 7. Schedule Automatic Weekly Runs (macOS LaunchAgents)
+
+1. Create a plist file for LaunchAgents:
+
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" 
+        "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>com.fergal.fintrac_scraper</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/bin/bash</string>
+            <string>/Users/fergaldillon/Desktop/fintrac_tracker/run_scraper.sh</string>
+        </array>
+        <key>StartCalendarInterval</key>
+        <dict>
+            <key>Weekday</key>
+            <integer>2</integer> <!-- Monday -->
+            <key>Hour</key>
+            <integer>9</integer> <!-- 9 AM -->
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <key>StandardOutPath</key>
+        <string>/Users/fergaldillon/Desktop/fintrac_tracker/scraper.log</string>
+        <key>StandardErrorPath</key>
+        <string>/Users/fergaldillon/Desktop/fintrac_tracker/scraper_error.log</string>
+    </dict>
+    </plist>
+    ```
+
+2. Move it to LaunchAgents folder:
+
+    ```bash
+    mv ~/Desktop/fintrac_tracker/com.fergal.fintrac_scraper.plist ~/Library/LaunchAgents/
+    ```
+
+3. Load the agent to start scheduling:
+
+    ```bash
+    launchctl load ~/Library/LaunchAgents/com.fergal.fintrac_scraper.plist
+    ```
+
+4. Check the agent status:
+
+    ```bash
+    launchctl list | grep fintrac
+    ```
+
+5. To update or reload the agent later:
+
+    ```bash
+    launchctl unload ~/Library/LaunchAgents/com.fergal.fintrac_scraper.plist
+    launchctl load ~/Library/LaunchAgents/com.fergal.fintrac_scraper.plist
+    ```
+
+### 8. Optional Enhancements & Notes
+
+- **Preserve Dashboard Sheet:**  
+  The Python script only updates the `Fintrac Tracker` sheet. Your `Dashboard` sheet remains untouched.
+
+- **Logo and Formatting:**  
+  Keep a logo row at the top (Row 1) and headers starting at Row 2. The script automatically preserves this layout.
+
+- **Data Backup:**  
+  A local CSV file (`fintrac_news.csv`) is saved every time the scraper runs. This ensures you have a backup of all scraped articles.
+
+- **Hyperlinked Titles:**  
+  The `title` column is automatically converted to clickable links labeled "Read article".
+
+- **Timestamp:**  
+  The top-right cell (`E1`) is updated with the last scrape time for transparency.
+
+- **Customizations:**  
+  You can modify:
+  - `StartCalendarInterval` in the plist to change the day/time of automatic runs.
+  - Chrome options in `scraper.py` to disable headless mode for debugging.
+  - Google Sheet name or worksheet title if you rename your sheet.
+
+- **Dependencies:**  
+  Make sure Python packages are installed:
+
+  ```bash
+  /Library/Frameworks/Python.framework/Versions/3.14/bin/python3 -m pip install selenium gspread oauth2client pandas
+
+
